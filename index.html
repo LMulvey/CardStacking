@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Ditidaht Card Stacking Exercise</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="cardsContainer">
+
+    </div>
+    <div class="bucketsContainer">
+
+    </div>
+</body>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js" integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+    crossorigin="anonymous"></script>
+<script>
+    const cardsJson = {
+        1: {
+            title: "Card 1",
+            color: "#F1F1F1",
+            text: "I'm the first card.",
+            bucket_id: 1
+        },
+        2: {
+            title: "Card 2",
+            color: "red",
+            text: "I'm the second card.",
+            bucket_id: 3
+        },
+        3: {
+            title: "Card 3",
+            color: "springgreen",
+            image: 'ok_illustration.gif',
+            text: "čačabax̣",
+            bucket_id: 4
+        },
+        4: {
+            title: "Card 4",
+            color: "yellow",
+            text: "I'm yet another card!",
+            bucket_id: 2
+        },
+        5: {
+            title: "Card 5",
+            color: "dodgerblue",
+            text: "Blue card",
+            bucket_id: 3
+        },
+        6: {
+            title: "Card 6",
+            color: "rgb(255, 174, 0)",
+            text: "Orange Card!",
+            bucket_id: 2
+        },
+    };
+
+    const bucketsJson = {
+        1: { title: "Bucket 1", color: "#F1F1F1" },
+        2: { title: "Bucket 2", color: "yellow" },
+        3: { title: "Bucket 3", color: "red" },
+        4: { title: "Bucket 4", color: "springgreen" }
+    };
+
+    function getRotationDegrees(obj) {
+        var matrix = obj.css("-webkit-transform") ||
+            obj.css("-moz-transform") ||
+            obj.css("-ms-transform") ||
+            obj.css("-o-transform") ||
+            obj.css("transform");
+        if (matrix !== 'none') {
+            var values = matrix.split('(')[1].split(')')[0].split(',');
+            var a = values[0];
+            var b = values[1];
+            var angle = Math.round(Math.atan2(b, a) * (180 / Math.PI));
+        } else { var angle = 0; }
+
+        if (angle < 0) angle += 360;
+        return angle;
+    }
+
+    function handleDrag(event, ui) {
+        this.originalRotate = (getRotationDegrees($(this)) !== 0) ? getRotationDegrees($(this)) : this.originalRotate;
+        $(this).css('transform', 'rotate(0)');
+    }
+
+    function handleDrop(event, ui) {
+        let drag = $(ui.draggable[0]);
+        let bucketId = $(ui.draggable[0]).data('bucket');
+        if (bucketId != $(this).data('bucket')) {
+            drag.draggable("option", "revert", true);
+            $(this).effect('shake');
+        } else {
+            drag.draggable("option", "revert", false);
+            drag.effect('drop', {direction: "down"}, function() { $(this).remove() });
+            $(this).find('.bucketTitle').text('Great job!');
+        }
+    }
+
+    function handleStop(event, ui) {
+        $(this).css('transform', `rotate(${this.originalRotate}deg)`);
+    }
+
+    let iterateObject = function (obj, callback) {
+        let keys = Object.keys(obj);
+        keys.forEach((key, i) => {
+            callback(key, i);
+        });
+    }
+
+    let buildCards = function (cards) {
+        let cardsContainer = $('.cardsContainer');
+        let lastLeft = 0;
+        iterateObject(cards, function (item, i) {
+            let randRotate = Math.floor(Math.random() * 90 + 1);
+            let randOffset = {
+                top: Math.floor(Math.random() * 150 + 1),
+                left: lastLeft + (Math.floor(Math.random() * 250 + 1))
+            };
+            let image = (cards[item].image) ? `<img src="${cards[item].image}">` : '';
+            lastLeft = randOffset.left;
+
+            $(`<div class="card" data-bucket="${cards[item].bucket_id}" style="background-color:${cards[item].color}; 
+            transform: rotate(${randRotate}deg);
+            top:${randOffset.top}px;
+            left:${randOffset.left}px;">
+                <strong>${cards[item].title}</strong><br/>
+                ${image}
+                ${cards[item].text}
+                </div>`)
+            .appendTo(cardsContainer)
+        });
+    }
+
+    let buildBuckets = function (buckets) {
+        let bucketsContainer = $('.bucketsContainer');
+        iterateObject(buckets, function (item, i) {
+            $(`<div class="bucket" data-bucket="${item}" style="background-color:${buckets[item].color}">
+                <div class="bucketLip"> </div>
+                <span class="bucketTitle">${buckets[item].title}</span>
+                </div>`).appendTo(bucketsContainer);
+        })
+    }
+
+    buildCards(cardsJson);
+    buildBuckets(bucketsJson);
+
+    $(document).ready(() => {
+        $('.card').draggable({
+            drag: handleDrag,
+            stop: handleStop,
+            scroll: false
+        });
+        $('.bucket').droppable({
+            drop: handleDrop,
+            tolerance: 'touch'
+        });
+    });
+</script>
+
+</html>
